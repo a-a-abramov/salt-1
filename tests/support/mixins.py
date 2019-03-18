@@ -564,7 +564,7 @@ class SaltReturnAssertsMixin(object):
             for saltret in self.__getWithinSaltReturn(ret, 'result'):
                 self.assertTrue(saltret)
         except AssertionError:
-            log.info('Salt Full Return:\n{0}'.format(pprint.pformat(ret)))
+            log.info('Salt Full Return:\n%s', pprint.pformat(ret))
             try:
                 raise AssertionError(
                     '{result} is not True. Salt Comment:\n{comment}'.format(
@@ -583,7 +583,7 @@ class SaltReturnAssertsMixin(object):
             for saltret in self.__getWithinSaltReturn(ret, 'result'):
                 self.assertFalse(saltret)
         except AssertionError:
-            log.info('Salt Full Return:\n{0}'.format(pprint.pformat(ret)))
+            log.info('Salt Full Return:\n%s', pprint.pformat(ret))
             try:
                 raise AssertionError(
                     '{result} is not False. Salt Comment:\n{comment}'.format(
@@ -600,7 +600,7 @@ class SaltReturnAssertsMixin(object):
             for saltret in self.__getWithinSaltReturn(ret, 'result'):
                 self.assertIsNone(saltret)
         except AssertionError:
-            log.info('Salt Full Return:\n{0}'.format(pprint.pformat(ret)))
+            log.info('Salt Full Return:\n%s', pprint.pformat(ret))
             try:
                 raise AssertionError(
                     '{result} is not None. Salt Comment:\n{comment}'.format(
@@ -665,16 +665,19 @@ def _fetch_events(q):
             queue_item.task_done()
 
     atexit.register(_clean_queue)
-
-    opts = RUNTIME_VARS.RUNTIME_CONFIGS['minion']
-    event = salt.utils.event.get_event('minion', sock_dir=opts['sock_dir'], opts=opts)
+    a_config = AdaptedConfigurationTestCaseMixin()
+    event = salt.utils.event.get_event(
+        'minion',
+        sock_dir=a_config.get_config('minion')['sock_dir'],
+        opts=a_config.get_config('minion'),
+    )
     while True:
         try:
             events = event.get_event(full=False)
-        except Exception:
+        except Exception as exc:
             # This is broad but we'll see all kinds of issues right now
             # if we drop the proc out from under the socket while we're reading
-            pass
+            log.exception("Exception caught while getting events %r", exc)
         q.put(events)
 
 
