@@ -1,0 +1,26 @@
+Changes to Saltclass
+====================
+
+A number of critical bugs and limitations were fixed:
+
+* `#48167 <https://github.com/saltstack/salt/issues/48167>`_ Saltclass performance
+* `#48170 <https://github.com/saltstack/salt/issues/48170>`_ Multiple issues with Saltclass variable expansion
+* `#48434 <https://github.com/saltstack/salt/issues/48434>`_ Crash while applying state to new minion with saltclass enabled
+* `#49175 <https://github.com/saltstack/salt/issues/49175>`_ SaltClass duplicate entries in merged list
+* `#50262 <https://github.com/saltstack/salt/issues/50262>`_ Saltclass: broken list expansion (2019.2.0)
+* `#50755 <https://github.com/saltstack/salt/issues/50755>`_ saltclass list override '^' is literal for single list
+* `#51360 <https://github.com/saltstack/salt/issues/51360>`_ Trying to reference existing pillars in new pillars (both first-level and subdirectories/init.sls) leads to unexpected behaviour
+* `#51489 <https://github.com/saltstack/salt/issues/51489>`_ Saltclass globbing breaks class expansion
+* `#51817 <https://github.com/saltstack/salt/issues/51817>`_ Saltclass external pillar broken in 2019.2.0
+
+TODO: are these actually fixed or it is better not to mention them?
+
+* `#50501 <https://github.com/saltstack/salt/issues/50501>`_ saltclass master_top module fails to populate __salt__ in some cases (salt-ssh + saltutil)
+* `#50265 <https://github.com/saltstack/salt/issues/50265>`_ saltclass pillar not available to jinja ?
+* `#50688 <https://github.com/saltstack/salt/issues/50688>`_ targeting saltclass environment pillar only works once
+
+TODO: mention incompatible changes:
+
+* The exact Jinja variables that were renamed for consistency
+* `minion_id` removed in favor of `opts.id` or `grains.id`
+* Class ordering that is compatible with reclass
