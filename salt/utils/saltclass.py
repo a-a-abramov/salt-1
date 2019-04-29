@@ -46,7 +46,7 @@ def _render_yaml(_file, salt_data):
     return result
 
 
-def _dict_merge(m_target, m_object, path=None, reverse=False):
+def dict_merge(m_target, m_object, path=None, reverse=False):
     '''
     Merge m_target <---merge-into---- m_object recursively. Override (^) logic here.
     '''
@@ -57,7 +57,7 @@ def _dict_merge(m_target, m_object, path=None, reverse=False):
         if key in m_target:
             if isinstance(m_target[key], list) and isinstance(m_object[key], list):
                 if not reverse:
-                    if m_object[key][0] == '^':
+                    if m_object[key] and m_object[key][0] == '^':
                         m_object[key].pop(0)
                         m_target[key] = m_object[key]
                     else:
@@ -71,7 +71,7 @@ def _dict_merge(m_target, m_object, path=None, reverse=False):
                     else:
                         m_target[key][0:0] = m_object[key]
             elif isinstance(m_target[key], dict) and isinstance(m_object[key], dict):
-                _dict_merge(m_target[key], m_object[key], path + [six.text_type(key)], reverse=reverse)
+                dict_merge(m_target[key], m_object[key], path + [six.text_type(key)], reverse=reverse)
             elif m_target[key] == m_object[key]:
                 pass
             else:
@@ -270,24 +270,83 @@ def resolve_classes_glob(base_class, glob, salt_data):
             return [glob]  # if we're here glob is not glob anymore but actual class name
 
 
-def get_saltclass_data(node_data, salt_data):
-    '''
-    Main function. Short explanation of the algorithm for the most curious ones:
-    - build `salt_data['class_paths']` - OrderedDict( name of class : absolute path to it's file ) sorted by keys
-    - merge pillars found in node definition into existing from previous ext_pillars
-    - initialize `classes` deque of class names with data from node
-    - loop through `classes` until it's not emptied: pop class names `cls` from the end, expand, get nested classes,
-      resolve globs if needed, put them to the beginning of queue
-    - since all classes has already been expanded on the previous step, we simply traverse `expanded_classes` dict
-      as a tree depth-first to build `ordered_class_list` and then it's fairly simple
-    :return: dict pillars, list classes, list states, str environment
-    '''
+def expand_class(cls, salt_data):
+    cls_filepath = salt_data['class_paths'].get(cls)
+    if not cls_filepath:
+        log.warning('%s: Class definition not found', cls)
+        return {}
+    expanded_class = _render_yaml(cls_filepath, salt_data)
+    _validate(cls, expanded_class)
+    if 'classes' in expanded_class:
+        resolved_classes = []
+        for c in reversed(expanded_class['classes']):
+            if c is not None and isinstance(c, six.string_types):
+                # Resolve globs
+                if c.endswith('*') or c.startswith('.'):
+                    resolved_classes.extend(reversed(resolve_classes_glob(cls, c, salt_data)))
+                else:
+                    resolved_classes.append(c)
+            else:
+                raise SaltException('Nonstring item in classes list in class {} - {}. '.format(cls, str(c)))
+        expanded_class['classes'] = resolved_classes[::-1]
+    return expanded_class
+
+
+def get_expanded_classes(cls, salt_data, cls_dict=None, seen_classes=None):
+    cls = cls if isinstance(cls, list) else [cls]
+    cls_dict = {} if cls_dict is None else cls_dict
+    seen_classes = set() if seen_classes is None else seen_classes
+
+    for c in cls:
+        if c not in seen_classes:
+            seen_classes.add(c)
+            cls_dict[c] = expand_class(c, salt_data)
+            if cls_dict[c].get('classes'):
+                get_expanded_classes(cls_dict[c].get('classes'), salt_data, cls_dict=cls_dict, seen_classes=seen_classes)
+    return cls_dict
+
+
+def get_ordered_class_list(cls, cls_dict, seen_classes=None):
+    ord_subclasses = []
+    seen_classes = set() if seen_classes is None else seen_classes
+    for c in cls_dict.get(cls, {}).get('classes', []):
+        if c not in seen_classes:
+            seen_classes.add(c)
+            ord_subclasses.extend(get_ordered_class_list(c, cls_dict, seen_classes=seen_classes))
+    return ord_subclasses + [cls]
+
+
+def get_class_list_by_level(classes_by_levels, cls_dict, current_level=0, seen_classes=None):
+    seen_classes = set() if seen_classes is None else seen_classes
+    for cls in classes_by_levels.get(current_level):
+        if cls not in seen_classes:
+            seen_classes.add(cls)
+
+            subclasses = cls_dict.get(cls, {}).get('classes', [])
+            if not subclasses:
+                continue
+            if not current_level + 1 in classes_by_levels:
+                classes_by_levels[current_level + 1] = []
+            classes_by_levels[current_level + 1].extend(subclasses)
+            get_class_list_by_level(classes_by_levels, cls_dict, current_level + 1, seen_classes)
+    return classes_by_levels
+
+
+def remove_duplicates(class_list):
+    tmp = []
+    for c in class_list:
+        if c not in tmp:
+            tmp.append(c)
+    return tmp
+
+
+def get_class_paths(salt_data):
     salt_data['class_paths'] = {}
     for dirpath, dirnames, filenames in salt.utils.path.os_walk(os.path.join(salt_data['path'], 'classes'),
                                                                 followlinks=True):
         for filename in filenames:
             # Die if there's an X.yml file and X directory in the same path
-            if filename[:-4] in dirnames:
+            if filename[:-4] in dirnames:   # [:-4] trims .yml
                 raise SaltException('Conflict in class file structure - file {}/{} and directory {}/{}. '
                                     .format(dirpath, filename, dirpath, filename[:-4]))
             abs_path = os.path.join(dirpath, filename)
@@ -297,86 +356,49 @@ def get_saltclass_data(node_data, salt_data):
             else:
                 name = str(rel_path[:-len('.yml')]).replace(os.sep, '.')
             salt_data['class_paths'][name] = abs_path
-    salt_data['class_paths'] = OrderedDict(((k, salt_data['class_paths'][k]) for k in sorted(salt_data['class_paths'])))
+    return OrderedDict(((k, salt_data['class_paths'][k]) for k in sorted(salt_data['class_paths'])))
 
-    # Merge minion_pillars into salt_data
-    _dict_merge(salt_data['__pillar__'], node_data.get('pillars', {}))
 
-    # Init classes queue with data from minion
-    classes = get_node_classes(node_data, salt_data)
+def get_saltclass_data(node_data, salt_data):
+    salt_data['class_paths'] = get_class_paths(salt_data)
 
-    seen_classes = set()
-    expanded_classes = OrderedDict()
+    salt_data['__pillar__'] = dict_merge(salt_data['__pillar__'], node_data.get('pillars', {}))
 
-    # Build expanded_classes OrderedDict (we'll need it later)
-    # and pillars dict for a minion
-    # At this point classes queue consists only of
-    while classes:
-        cls = classes.pop()
-        # From here on cls is definitely not a glob
-        seen_classes.add(cls)
-        cls_filepath = salt_data['class_paths'].get(cls)
-        if not cls_filepath:
-            log.warning('%s: Class definition not found', cls)
-            continue
-        expanded_class = _render_yaml(cls_filepath, salt_data)
-        _validate(cls, expanded_class)
-        expanded_classes[cls] = expanded_class
-        if 'pillars' in expanded_class and expanded_class['pillars'] is not None:
-            _dict_merge(salt_data['__pillar__'], expanded_class['pillars'], reverse=True)
-        if 'classes' in expanded_class:
-            resolved_classes = []
-            for c in reversed(expanded_class['classes']):
-                if c is not None and isinstance(c, six.string_types):
-                    # Resolve globs
-                    if c.endswith('*') or c.startswith('.'):
-                        classes_from_glob = resolve_classes_glob(cls, c, salt_data)
-                        classes_from_glob_filtered = [n for n in classes_from_glob
-                                                      if n not in seen_classes and n not in classes]
-                        classes.extendleft(classes_from_glob_filtered)
-                        resolved_classes.extend(reversed(classes_from_glob_filtered))
-                    elif c not in seen_classes and c not in classes:
-                        classes.appendleft(c)
-                        resolved_classes.append(c)
-                else:
-                    raise SaltException('Nonstring item in classes list in class {} - {}. '.format(cls, str(c)))
-            expanded_class['classes'] = resolved_classes[::-1]
+    node_data['classes'] = get_node_classes(node_data, salt_data)
+    expanded_classes = get_expanded_classes(node_data['classes'], salt_data)
 
-    # Get ordered class and state lists from expanded_classes and minion_classes (traverse expanded_classes tree)
-    def traverse(this_class, result_list):
-        result_list.append(this_class)
-        leafs = expanded_classes.get(this_class, {}).get('classes', [])
-        for leaf in leafs:
-            traverse(leaf, result_list)
-
-    # Start with node_data classes again, since we need to retain order
+    # We would merge pillars and compose list of states while iterating over this list
     ordered_class_list = []
-    for cls in get_node_classes(node_data, salt_data):
-        traverse(cls, ordered_class_list)
+    for cls in node_data['classes']:
+        ordered_class_list.extend(get_ordered_class_list(cls, expanded_classes))
+    ordered_class_list = remove_duplicates(ordered_class_list)
 
-    # Remove duplicates
-    tmp = []
-    for cls in reversed(ordered_class_list):
-        if cls not in tmp:
-            tmp.append(cls)
-    ordered_class_list = tmp[::-1]
+    # This list is for representation in __saltclass__ dict in pillars ONLY.
+    # The order is the same as in reclass to keep backward compatibility.
+    classes_repr = []
+    for cls in node_data['classes']:
+        classes_by_levels = get_class_list_by_level({0: [cls]}, expanded_classes)
+
+        for level in sorted(classes_by_levels.keys(), reverse=True)[:-1]:
+            classes_repr.extend(classes_by_levels[level])
+    classes_repr.extend(node_data['classes'])
 
     # Build state list and get 'environment' variable
     ordered_state_list = node_data.get('states', [])
-    environment = node_data.get('environment', '')
+    environment = node_data.get('environment', 'base')
     for cls in ordered_class_list:
+        class_pillars = expanded_classes.get(cls, {}).get('pillars', {}) or {}
+        dict_merge(salt_data['__pillar__'], class_pillars)
+
         class_states = expanded_classes.get(cls, {}).get('states', [])
-        if not environment:
-            environment = expanded_classes.get(cls, {}).get('environment', '')
+        environment = expanded_classes.get(cls, {}).get('environment') or environment
         for state in class_states:
-            # Ignore states with override (^) markers in it's names
-            # Do it here because it's cheaper
-            if state not in ordered_state_list and state.find('^') == -1:
+            if state not in ordered_state_list:
                 ordered_state_list.append(state)
 
-    # Expand ${xx:yy:zz} here and pop override (^) markers
+    # Expand ${xx:yy:zz} and pop override (^) markers
     salt_data['__pillar__'] = expand_variables(salt_data['__pillar__'])
-    salt_data['__classes__'] = ordered_class_list
+    salt_data['__classes__'] = classes_repr
     salt_data['__states__'] = ordered_state_list
     return salt_data['__pillar__'], salt_data['__classes__'], salt_data['__states__'], environment
 
@@ -406,20 +428,19 @@ def get_node_classes(node_data, salt_data):
     '''
     Extract classes from node_data structure. Resolve here all globs found in it. Can't do it with resolve_classes_glob
     since node globs are more strict and support prefix globs only.
-    :return: deque with extracted classes
+    :return: list of extracted classes
     '''
-    result = deque()
-    for c in reversed(node_data.get('classes', [])):
+    result = []
+    for c in node_data.get('classes', []):
         if c.startswith('.'):
             raise SaltException('Unsupported glob type in {} - \'{}\'. '
                                 'Only A.B* type globs are supported in node definition. '
                                 .format(salt_data['minion_id'], c))
         elif c.endswith('*'):
             resolved_node_glob = _resolve_prefix_glob(c, salt_data)
-            for resolved_node_class in reversed(sorted(resolved_node_glob)):
-                result.appendleft(resolved_node_class)
+            result.extend(sorted(resolved_node_glob))
         else:
-            result.appendleft(c)
+            result.append(c)
     return result
 
 
