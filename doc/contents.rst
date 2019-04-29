@@ -36,4 +36,5 @@ Salt Table of Contents
     topics/development/index
     topics/releases/index
     topics/venafi/index
+    topics/classifiers/index
     glossary

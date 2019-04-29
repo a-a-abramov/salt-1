@@ -10,7 +10,6 @@ from jinja2 import FileSystemLoader, Environment
 import salt.utils.path
 import salt.utils.yaml
 from salt.exceptions import SaltException
-from yaml.error import YAMLError
 
 # Import 3rd-party libs
 from salt.ext import six
@@ -38,7 +37,7 @@ def _render_yaml(_file, salt_data):
     result = None
     try:
         result = salt.utils.yaml.safe_load(_render_jinja(_file, salt_data))
-    except YAMLError as e:
+    except salt.utils.yaml.YAMLError as e:
         log.error('YAML rendering exception for file %s:\n%s', _file, e)
     if result is None:
         log.warning('Unable to render yaml from %s', _file)
