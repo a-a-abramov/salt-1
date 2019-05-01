@@ -1,5 +1,5 @@
 states:
-{% for version in __pillar__.get('L0C', {}).get('versions', ['default_version']) %}
+{% for version in pillar.get('L0C', {}).get('versions', ['default_version']) %}
   - state_C.{{ version }}
 {% endfor %}
 
