@@ -4,6 +4,7 @@ from __future__ import absolute_import, print_function, unicode_literals
 import os
 import re
 import logging
+from collections import OrderedDict
 from jinja2 import FileSystemLoader, Environment
 
 # Import Salt libs
@@ -13,9 +14,6 @@ from salt.exceptions import SaltException
 
 # Import 3rd-party libs
 from salt.ext import six
-
-# No need to invent bicycle
-from collections import deque, OrderedDict
 
 log = logging.getLogger(__name__)
 
@@ -360,9 +358,6 @@ def get_class_paths(salt_data):
 
 def get_saltclass_data(node_data, salt_data):
     salt_data['class_paths'] = get_class_paths(salt_data)
-
-    salt_data['__pillar__'] = dict_merge(salt_data['__pillar__'], node_data.get('pillars', {}))
-
     node_data['classes'] = get_node_classes(node_data, salt_data)
     expanded_classes = get_expanded_classes(node_data['classes'], salt_data)
 
@@ -381,19 +376,19 @@ def get_saltclass_data(node_data, salt_data):
         for level in sorted(classes_by_levels.keys(), reverse=True)[:-1]:
             classes_repr.extend(classes_by_levels[level])
     classes_repr.extend(node_data['classes'])
+    classes_repr = remove_duplicates(classes_repr)
 
     # Build state list and get 'environment' variable
-    ordered_state_list = node_data.get('states', [])
+    ordered_state_list = []
     environment = node_data.get('environment', 'base')
     for cls in ordered_class_list:
         class_pillars = expanded_classes.get(cls, {}).get('pillars', {}) or {}
-        dict_merge(salt_data['__pillar__'], class_pillars)
-
-        class_states = expanded_classes.get(cls, {}).get('states', [])
+        class_states = expanded_classes.get(cls, {}).get('states', []) or []
         environment = expanded_classes.get(cls, {}).get('environment') or environment
-        for state in class_states:
-            if state not in ordered_state_list:
-                ordered_state_list.append(state)
+        dict_merge(salt_data['__pillar__'], class_pillars)
+        ordered_state_list.extend([state for state in class_states if state not in ordered_state_list])
+    ordered_state_list.extend(node_data.get('states', []))
+    dict_merge(salt_data['__pillar__'], node_data.get('pillars', {}))
 
     # Expand ${xx:yy:zz} and pop override (^) markers
     salt_data['__pillar__'] = expand_variables(salt_data['__pillar__'])

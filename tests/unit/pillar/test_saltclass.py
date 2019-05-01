@@ -22,6 +22,8 @@ fake_minion_id5 = 'fake_id5'
 fake_minion_id6 = 'fake_id6'
 fake_minion_id7 = 'fake_id7'
 fake_minion_id8 = 'fake_id8'
+fake_minion_id9 = 'fake_id9'
+
 
 fake_pillar = {}
 fake_args = ({'path': os.path.abspath(
@@ -245,3 +247,7 @@ class SaltclassTestCase(TestCase, LoaderModuleMockMixin):
                            'other_pillar': {'B': {'C': {'tree': {'pillar': 'abracadabra'}}}},
                            'some': {'tree': {'pillar': 'abracadabra'}}}
         self.assertDictEqual(result, expected_result)
+
+    def prnt(self):
+        from pprint import pprint
+        pprint(saltclass.ext_pillar(fake_minion_id9, {}, fake_args))
