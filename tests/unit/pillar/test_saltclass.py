@@ -23,6 +23,7 @@ fake_minion_id6 = 'fake_id6'
 fake_minion_id7 = 'fake_id7'
 fake_minion_id8 = 'fake_id8'
 fake_minion_id9 = 'fake_id9'
+fake_minion_id10 = 'fake_id10'
 
 
 fake_pillar = {}
@@ -247,6 +248,10 @@ class SaltclassTestCase(TestCase, LoaderModuleMockMixin):
                            'other_pillar': {'B': {'C': {'tree': {'pillar': 'abracadabra'}}}},
                            'some': {'tree': {'pillar': 'abracadabra'}}}
         self.assertDictEqual(result, expected_result)
+
+    def test_multiple_node_definitions(self):
+        self.assertRaisesRegex(SaltException, r'Nodes can only be defined once per inventory.$',
+                               saltclass.ext_pillar, fake_minion_id10, {}, fake_args)
 
     def prnt(self):
         from pprint import pprint

@@ -404,6 +404,10 @@ def get_node_data(minion_id, salt_data):
     for dirpath, _, filenames in salt.utils.path.os_walk(os.path.join(salt_data['path'], 'nodes'), followlinks=True):
         for minion_file in filenames:
             if minion_file == '{0}.yml'.format(minion_id):
+                if node_file:
+                    raise SaltException('Definition of node {} in {} collides with definition in {}. '
+                                        'Nodes can only be defined once per inventory.'
+                                        .format(minion_id, node_file, os.path.join(dirpath, minion_file)))
                 node_file = os.path.join(dirpath, minion_file)
 
     # Load the minion_id definition if existing, else an empty dict
