@@ -1,0 +1,9 @@
+pillars:
+  list:
+    - T
+states:
+  - T
+classes:
+  - ord.Q
+  - ord.R
+  - ord.S

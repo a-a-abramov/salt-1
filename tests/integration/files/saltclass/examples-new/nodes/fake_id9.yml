@@ -1,0 +1,13 @@
+classes:
+  - ord.G
+  - ord.N
+  - ord.U
+
+states:
+  - XX
+  - YY
+  - ZZ
+
+pillars:
+  list:
+    - node

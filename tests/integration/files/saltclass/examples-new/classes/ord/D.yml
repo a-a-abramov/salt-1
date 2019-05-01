@@ -1,0 +1,9 @@
+pillars:
+  list:
+    - D
+states:
+  - D
+classes:
+  - ord.A
+  - ord.B
+  - ord.C
