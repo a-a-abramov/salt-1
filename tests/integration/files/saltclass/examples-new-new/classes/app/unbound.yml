@@ -1,0 +1,17 @@
+states:
+  - unbound
+
+pillars:
+  unbound:
+    num-threads: 2
+    access-control:
+      - netblock: "::1"
+        rule: allow
+    module-config: 'dns64 validator iterator'
+    dns64-prefix: CIDR
+    forward-zone:
+      - name: "."
+        addrs:
+          - CIDR
+        first: no
+

@@ -1,0 +1,35 @@
+states:
+  - filebeat
+
+pillars:
+  filebeat:
+    prospectors:
+      - type: log
+        paths:
+          - /var/log/messages.json
+          - /var/log/messages.json-*
+        exclude_files: ['\.gz$', '\.bz2$', '\.xz$']
+        scan_frequency: 10s
+        close_inactive: 1h
+        fields:
+          type: syslog
+        fields_under_root: true
+        json.keys_under_root: true
+        json.overwrite_keys: true
+        json.add_error_key: true
+    output:
+      elasticsearch:
+        # Array of hosts to connect to.
+        hosts: []
+        loadbalance: true
+        bulk_max_size: 500
+        workers: 2
+        timeout: 300
+        index: null # applogs-%{+yyyy.MM.dd}
+        template:
+          enabled: false
+    config:
+      setup:
+        template:
+          enabled: false
+

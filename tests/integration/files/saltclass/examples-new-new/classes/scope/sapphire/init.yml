@@ -1,0 +1,23 @@
+classes:
+  - scope.common-template
+
+pillars:
+  ENV: sapphire
+  recursive-dns:
+    - ^
+    - 2001:db8:a:a:a::2
+  consul:
+    reloadable-config:
+      retry_join:
+        - ^
+        - '[2001:db8:a::3]'
+    private-config:
+      encrypt: consulsecret-notsosecretatall-${ENV}
+  collectd:
+    network:
+      servers:
+        - ^
+        - name: mon.${domain}
+          password: collectdsecret-notsosecretatall-${ENV}
+          port: 25826
+          username: default

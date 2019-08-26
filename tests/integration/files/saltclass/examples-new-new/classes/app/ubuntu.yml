@@ -1,0 +1,11 @@
+states:
+  - ubuntu.base
+  - ubuntu.extra-utils
+
+pillars:
+  repos:
+    base: repos.example.net/ubuntu
+  pki:
+    openssh:
+      common-deploy-key:
+        privkey: null

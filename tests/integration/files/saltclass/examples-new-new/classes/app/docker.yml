@@ -1,0 +1,17 @@
+states:
+  - docker
+  - python.dev-python.docker-py
+
+pillars:
+  docker:
+    storage:
+      driver: "overlay2"
+    userns:
+        enable: True
+        username: dockerns
+        id: 100000
+        id_count: 65536
+  docker-registries:
+    https://docker-registry.example.net/v2/:
+      username: null
+      password: null

@@ -1,0 +1,23 @@
+states:
+  - consul
+
+pillars:
+  consul:
+    version: ">1.5"
+    packaged: true
+    main-config:
+      bind_addr: "::"
+      enable_script_checks: true
+      disable_update_check: true
+      telemetry:
+        statsd_address: "localhost:8125"
+        disable_hostname: true
+        prefix_filter:
+          - -consul.health.service
+          - -consul.http
+          - -consul.raft
+      advertise_addr: "{{ grains.get('fqdn_ip6')[0] }}"
+      server: false
+      ui: false
+      client_addr: "::1"
+

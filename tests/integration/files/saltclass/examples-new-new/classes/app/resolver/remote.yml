@@ -1,0 +1,7 @@
+classes:
+  - app.resolvconf
+
+pillars:
+  resolver:
+    nameservers: ${recursive-dns} # upstream dns
+    search: ${domain} # search domain

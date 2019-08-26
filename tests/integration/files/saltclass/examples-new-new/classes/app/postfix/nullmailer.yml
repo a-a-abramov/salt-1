@@ -1,0 +1,8 @@
+states:
+  - postfix.nullmailer
+
+pillars:
+  postfix:
+    nullmailer:
+      mydomain: example.net
+      relayhost: mr.example.net

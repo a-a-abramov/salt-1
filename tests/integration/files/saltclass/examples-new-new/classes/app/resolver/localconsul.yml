@@ -1,0 +1,33 @@
+classes:
+  - app.consul
+  - app.resolvconf
+  - app.unbound
+
+pillars:
+  unbound:
+    access-control:
+      - netblock: CIDR
+        rule: allow
+    domain-insecure:
+      - "consul."
+    do-not-query-localhost: false
+    forward-zone:
+      - ^
+      - name: "."
+        addrs: ${recursive-dns} # upstream dns
+        first: no
+      - name: "consul."
+        addrs:
+          - ::1@8600
+        first: no
+  resolver:
+    nameservers:
+      - ^
+      - ::1
+    search: ${domain} # search domain
+  consul:
+    reloadable-config:
+      retry_join:
+        - SETME # '[ipv6]' - consul masters
+    private-config:
+      encrypt: SETME # shared secret

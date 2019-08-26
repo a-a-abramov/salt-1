@@ -1,0 +1,44 @@
+environment: ${ENV}
+
+states:
+  - environment.base
+  - sysctl
+
+pillars:
+  ENV: null
+  domain: ${ENV}.example.net
+  recursive-dns: []
+  chrony:
+    conf:
+      servers:
+        - ^
+        - server: salt-master.${domain}
+          mode: iburst
+  salt:
+    version: '2019.2'
+    minion:
+      conf:
+        master:
+          - ^
+          - salt-master.${domain}
+        environment: ${ENV}
+        pillarenv: ${ENV}
+        saltenv: ${ENV}
+        autoload_dynamic_modules: True
+        clean_dynamic_modules: True
+        pillar_raise_on_missing: True
+        extmod_blacklist:
+          states:
+              - file
+  consul:
+    reloadable-config:
+      retry_join: []
+    private-config:
+      encrypt: null
+  collectd:
+    network:
+      servers: null
+  filebeat:
+    output:
+      elasticsearch:
+        index: ${ENV}-%{+yyyy.MM.dd}

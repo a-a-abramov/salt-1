@@ -1,0 +1,16 @@
+classes:
+  - .   #  attach init from the same level if present - class scope.emerald defined by classes/scope/emerald/init.yml
+  - role.salt-master
+
+pillars:
+  salt:
+    master:
+      conf:
+        # TODO: add full example after implementation
+        master_tops:
+          saltclass:
+            path: /var/salt/saltclass
+        ext_pillar:
+          - ^  # guarantee this is the only extpillar we use
+          - saltclass: 
+            - path: /var/salt/saltclass

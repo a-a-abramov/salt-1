@@ -1,0 +1,5 @@
+classes:
+  - app.base.common
+  - app.resolver.localconsul
+  - app.zookeeper
+  - app.kafka

@@ -1,0 +1,13 @@
+classes:
+  - app.consul
+
+pillars:
+  consul:
+    main-config:
+      server: true
+      bootstrap: true 
+      ui: true
+      client_addr: "[::]"
+      data_dir: /var/lib/consul
+      bootstrap_expect: 1
+      recursors: null # list

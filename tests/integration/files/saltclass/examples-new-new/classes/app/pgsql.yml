@@ -1,0 +1,36 @@
+states:
+  - pgsql
+  - pgsql.pgbouncer
+
+classes:
+  - app.consul
+
+pillars:
+  pgsql:
+    version: ">=10.5"
+    slot: "10"
+    conf:
+      fsync: "on"
+      synchronous_commit: "on"
+      wal_sync_method: "fdatasync"
+      max_connections: 100
+      shared_buffers: 2048MB
+      huge_pages: try
+      temp_buffers: 64MB
+      work_mem: 8MB
+      maintenance_work_mem: 256MB
+      wal_keep_segments: 128
+      max_replication_slots: 10
+    pg_hba:
+      host:
+        all:
+          - user: all
+            network: null
+            method: trust
+  consul:
+    reloadable-config:
+      services:
+        - id: null
+          name: null
+          port: 5432
+

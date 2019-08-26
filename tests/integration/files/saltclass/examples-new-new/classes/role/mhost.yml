@@ -1,0 +1,19 @@
+classes:
+  - app.base.common
+  - app.resolver.localconsul
+  - app.monitoring
+  - app.docker
+
+pillars:
+  consul:
+    drop-services-on-start: true
+  filebeat:
+    prospectors:
+      - type: log
+        exclude_files: ['\.gz$', '\.bz2$', '\.xz$']
+        paths:
+          - /var/log/example/_raw/*/*.log
+          - /var/log/example/_raw/*/*.log-*
+    config:
+      filebeat:
+        config_dir: conf.d

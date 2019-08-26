@@ -1,0 +1,11 @@
+states:
+  - collectd
+
+pillars:
+  collectd:
+    network:
+      servers:
+        - name: null
+          password: null
+          port: 25826
+          username: default

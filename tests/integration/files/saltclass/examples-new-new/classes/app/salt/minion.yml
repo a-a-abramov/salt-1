@@ -1,0 +1,33 @@
+states:
+  - salt.minion
+
+pillars:
+  salt:
+    minion:
+      conf:
+        ipv6: True
+        master: null
+        master_alive_interval: 300
+        retry_dns: 0
+        acceptance_wait_time: 60
+        acceptance_wait_time_max: 0
+        rejected_retry: False
+        random_reauth_delay: 60
+        auth_timeout: 60
+        auth_tries: 7
+        ping_interval: 5
+        cache_jobs: False
+        color: True
+        renderer: yaml_jinja
+        autoload_dynamic_modules: True
+        clean_dynamic_modules: True
+        environment: base
+        pillarenv_from_saltenv: True
+        pillarenv: base
+        pillar_raise_on_missing: True
+        state_aggregate: True
+        hash_type: sha512
+        state_verbose: False
+        state_output: changes
+        state_output_profile: False
+        multiprocessing: True

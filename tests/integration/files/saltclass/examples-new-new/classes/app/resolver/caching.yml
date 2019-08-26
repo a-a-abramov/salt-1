@@ -1,0 +1,16 @@
+classes:
+  - app.resolvconf
+  - app.unbound
+
+pillars:
+  resolver:
+    nameservers:
+      - ^
+      - ::1
+    search: ${domain} # search domain
+  unbound:
+    forward-zone:
+      - ^
+      - name: "."
+        addrs: ${recursive-dns} # upstream dns
+        first: no

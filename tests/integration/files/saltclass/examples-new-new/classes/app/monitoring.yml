@@ -1,0 +1,6 @@
+states:
+  - nagios.nagios-plugins
+
+classes:
+  - app.collectd
+  - app.filebeat

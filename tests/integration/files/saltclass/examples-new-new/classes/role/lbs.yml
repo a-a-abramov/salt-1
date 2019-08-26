@@ -1,0 +1,20 @@
+classes:
+  - app.base.common
+  - app.resolver.localconsul
+  - app.monitoring
+  - app.nginx
+
+pillars:
+  filebeat:
+    prospectors:
+      - close_inactive: 1h
+        exclude_files: [\.gz$, \.bz2$, \.xz$]
+        fields: {type: nginx-access-log}
+        fields_under_root: true
+        json.add_error_key: true
+        json.keys_under_root: true
+        json.overwrite_keys: true
+        paths: [/var/log/nginx/*.json, /var/log/nginx/*.json-*]
+        scan_frequency: 10s
+        type: log
+

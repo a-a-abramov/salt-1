@@ -1,0 +1,8 @@
+states:
+  - nginx
+
+pillars:
+  nginx:
+    ssl:
+      protocols: TLSv1.2 TLSv1.3
+

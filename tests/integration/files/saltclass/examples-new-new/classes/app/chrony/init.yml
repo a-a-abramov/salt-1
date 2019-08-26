@@ -1,0 +1,7 @@
+states:
+  - chrony
+
+pillars:
+  chrony:
+    conf:
+      servers: []

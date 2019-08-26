@@ -1,0 +1,16 @@
+states:
+  - kafka
+
+pillars:
+  kafka:
+    conf:
+      acl:
+        super-users: User:root
+      ssl:
+        client-auth: required
+        keystore:
+          password: null
+        truststore:
+          name: kafka
+          password: null
+    zookeepers: []

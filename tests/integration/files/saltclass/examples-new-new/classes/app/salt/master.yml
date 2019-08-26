@@ -1,0 +1,24 @@
+states:
+  - salt.master
+ 
+pillars:
+  salt:
+    master:
+      conf:
+        failhard: false
+        interface: '::'
+        ipv6: true
+        log_level: info
+        log_level_logfile: debug
+        loop_interval: 60
+        minion_data_cache: true
+        pidfile: /run/salt-master.pid
+        renderer: yaml_jinja
+        sign_pub_messages: true
+        sock_dir: /run/salt/master
+        state_output: changes
+        state_verbose: false
+        timeout: 15
+        top_file_merging_strategy: same
+        worker_threads: {{ grains.get('num_cpus',4)/2 }}
+        yaml_utf8: true

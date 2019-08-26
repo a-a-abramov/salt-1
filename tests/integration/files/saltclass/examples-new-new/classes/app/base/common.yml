@@ -1,0 +1,21 @@
+classes:
+  - app.ubuntu
+  - app.misc.contacts
+  - app.chrony
+  - app.salt.minion
+  - app.postfix.nullmailer
+
+states:
+  - syslog
+  - editors.qemacs
+  - ssh 
+  - openrc.cronjob
+  - core
+  - cron
+  - logrotate
+  - lldpd
+  - watchdog
+  - sysctl.fs
+  - sysctl.kernel
+  - sysctl.net
+  - irqbalance.absent
