@@ -1,4 +1,4 @@
-environment: ${ENV}
+environment: '-1234 ${ENV} ${ENV} ${ENV} ${ENV} 123 sdfdsf dsfdsf\' 
 
 states:
   - environment.base

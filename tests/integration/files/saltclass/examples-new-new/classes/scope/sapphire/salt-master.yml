@@ -1,6 +1,6 @@
 classes:
-  - .   #  attach init from the same level if present - class scope.emerald defined by classes/scope/emerald/init.yml
   - role.salt-master
+  - .   #  attach init from the same level if present - class scope.sapphire defined by classes/scope/sapphire/init.yml
 
 pillars:
   salt:

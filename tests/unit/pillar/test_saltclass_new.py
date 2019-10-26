@@ -35,8 +35,18 @@ class SaltclassTestCase(TestCase, LoaderModuleMockMixin):
                             '__salt__': fake_salt,
                             '__grains__': fake_grains}}
 
-    def prnt(self):
-        import salt.utils.yaml as yaml
+    def prnt(self, node):
+        import yaml
         import sys
-        extp_data = saltclass.ext_pillar('salt-master.sapphire.example.net', {}, fake_args)
-        yaml.dump(extp_data, stream=sys.stdout)
+        from pprint import pprint
+        noalias_dumper = yaml.dumper.SafeDumper
+        noalias_dumper.ignore_aliases = lambda self, data: True
+        extp_data = saltclass.ext_pillar(node, {}, fake_args)
+        pprint(extp_data)
+        yaml.dump(extp_data, default_flow_style=False, stream=sys.stdout, Dumper=noalias_dumper)
+
+    def real_ex(self):
+        self.prnt('salt-master.sapphire.example.net')
+
+    def alphabet(self):
+        self.prnt('fake_id9')
