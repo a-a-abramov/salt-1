@@ -3,7 +3,6 @@
 from __future__ import absolute_import, print_function, unicode_literals
 import os
 import logging
-from itertools import chain
 from copy import deepcopy
 from fnmatch import fnmatch
 from collections import OrderedDict
@@ -19,6 +18,8 @@ from salt.exceptions import SaltException
 from salt.ext import six
 
 log = logging.getLogger(__name__)
+
+# TODO: accept both .yml and .yaml
 
 
 def dict_merge(target, subject, path=None):
@@ -103,7 +104,7 @@ def get_variable_value(variable, dct):
 
 def substitute(struct, path, original, variable, value):
     """
-    Substitute all occurrences of variable in original with value and save to struct at path
+    Substitute all occurrences of variable in `original` with `value` and save to `struct` at `path`
     """
     for p in path[:-1]:
         struct = struct[p]
@@ -114,11 +115,6 @@ def substitute(struct, path, original, variable, value):
             raise SaltException('Type mismatch on variable {} expansion'.format(variable))
     else:
         struct[path[-1]] = original.replace(variable, six.text_type(value))
-
-
-class MockDict(dict):
-    def __getitem__(self, item):
-        return item
 
 
 class SaltClass(object):
@@ -174,10 +170,8 @@ class SaltClass(object):
         return self._node_paths
 
     # pillars, classes, states, environment
-    def render(self, node_name):
-        node = Node(node_name, self)
-        pprint(node.get_class_order())
-        pprint(node.get_raw_tree())
+    def render(self, minion_id, pillar=None, grains=None):
+        node = Node(minion_id, self)
         pass
 
 
@@ -194,7 +188,7 @@ class Klass(object):
         self._seen = set() if _merged is None else _merged
         self.raw = None
 
-        self.classes = OrderedDict()  # class_name:Klass
+        self.classes = OrderedDict()  # {class_name:Klass}
         self.pillars = {}
         self.states = []
         self.environment = None  # TODO: set default from salt here
@@ -217,7 +211,7 @@ class Klass(object):
     def get_raw_tree(self, full=False):
         children = []
         if self.classes:
-            for cls in self.classes.itervalues():
+            for cls in self.classes.values():
                 children.append(cls.get_raw_tree(full))
         if full:
             result = {}
@@ -231,7 +225,9 @@ class Klass(object):
 
     def expand_all(self):
         def _expand(struct, pattern):
-            for i in xrange(self.sc.opts['max_expansion_passes']):
+            #for i in range(self.sc.opts['max_expansion_passes']):
+            for i in range(__salt__['config.get']('saltclass:max_expansion_passes',
+                                                  default=5)):
                 for path, match in find_by_re(struct, pattern):
                     variable = match.group(0)
                     value = variable[2:] if variable.startswith('\\') else get_variable_value(variable, self.pillars)
@@ -287,8 +283,6 @@ class Klass(object):
     def _render_jinja(self):
         j_env = Environment(loader=FileSystemLoader(os.path.dirname(self.path)))
         j_env.globals.update({
-            'opts': self.sc.opts,
-            'salt': self.sc.salt,
             'grains': self.sc.grains,
             'pillar': self.sc.pillar
         })
@@ -386,7 +380,7 @@ class Node(Klass):
     def path(self):
         return self.sc.node_paths.get(self.name, None)
 
-
+'''
 import yaml
 from pprint import pprint
 
@@ -433,3 +427,4 @@ if before_env != m.environment:
 
 # pprint(m.merge_order())
 # yaml.dump(m.merge_tree(full=True), default_flow_style=False, stream=sys.stdout, Dumper=noalias_dumper)
+'''

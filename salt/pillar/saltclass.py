@@ -31,6 +31,7 @@ def ext_pillar(minion_id, pillar, *args, **kwargs):
     '''
     Compile pillar data
     '''
+    '''
     # Node definitions path will be retrieved from args (or set to default),
     # then added to 'salt_data' dict that is passed to the 'get_pillars'
     # function. The dictionary contains:
@@ -44,6 +45,7 @@ def ext_pillar(minion_id, pillar, *args, **kwargs):
     # If successful, the function will return a pillar dict for minion_id.
 
     # If path has not been set, make a default
+
     for i in args:
         if 'path' not in i:
             path = '/srv/saltclass'
@@ -61,5 +63,6 @@ def ext_pillar(minion_id, pillar, *args, **kwargs):
         'minion_id': minion_id,
         'path': path
     }
+    '''
 
     return sc.get_pillars(minion_id, salt_data)

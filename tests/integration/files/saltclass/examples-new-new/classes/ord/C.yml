@@ -1,0 +1,6 @@
+pillars:
+  list:
+    - C1
+    - C2
+states:
+  - C

@@ -1,0 +1,13 @@
+pillars:
+  list:
+    - G
+states:
+  - G
+  - ord.D:
+  	- 1
+classes:
+  - ord.D
+  - ord.E
+  - ord.F
+  - ord.T
+
